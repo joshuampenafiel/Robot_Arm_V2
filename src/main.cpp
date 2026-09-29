@@ -12,7 +12,7 @@ const short wrist_servo_pin=4;
 int shoulder_angle = 0;
 int elbow_angle = 0;
 int wrist_angle = 0;
-void setup() {
+void setup() {  
   Serial.begin(9600);
   shoulder_servo.attach(shoulder_servo_pin);
   elbow_servo.attach(elbow_servo_pin);
