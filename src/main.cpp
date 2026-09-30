@@ -43,7 +43,7 @@ float receive(){
   return msg;
 }
 
-int Offset(int current, int target) {
+int Comparison(int current, int target) {
   if (current < target - ANGLE_TOLERANCE){ 
     return current ++;
   }
@@ -63,19 +63,21 @@ void loop() {
   if (Serial.available() < 1){
     printf("no data");
   }
+  
   else if(Serial.available() > 0){
 
     int Target_angle = receive();
-
-    int Current_angle = 1;
-    int change = Offset(Current_angle,Target_angle);
-    
+    shoulder_angle = Comparison(shoulder_angle,Target_angle);
     shoulder_servo.write(shoulder_angle);
 
+    Target_angle = receive();
+    elbow_angle = Comparison(elbow_angle,Target_angle);
     elbow_servo.write(elbow_angle);
 
+    Target_angle = receive();
+    wrist_angle = Comparison(wrist_angle,Target_angle);
     wrist_servo.write(wrist_angle);
-    printf("Test");
+    
   }
 
 }
