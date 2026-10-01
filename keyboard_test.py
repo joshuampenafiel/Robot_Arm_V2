@@ -23,8 +23,8 @@ key_map = {
     ecodes.KEY_S: b"s\n",   # - Elbow Angle
     ecodes.KEY_Z: b"z\n",   # CW Wrist
     ecodes.KEY_X: b"x\n",   # CCW wrist
-  
-    ecodes.KEY_SPACE: b'\n',  # grip/close
+    ecodes.KEY_D: b"d\n",
+    ecodes.KEY_C: b'c\n',  # grip/close
 }
 
 while True:
@@ -32,4 +32,4 @@ while True:
         if key in held:
             ser.write(cmd)
             print(cmd, "sent\n")
-    time.sleep(0.01)   
+    time.sleep(0.01)
