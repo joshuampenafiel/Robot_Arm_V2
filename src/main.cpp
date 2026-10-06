@@ -13,14 +13,13 @@ const short wrist_servo_pin=4;
 int shoulder_angle = 0;
 int elbow_angle = 0;
 int wrist_angle = 0;
-
+const int number_of_motors = 3;
 //Serial definitions
 
-const int VECTOR_SIZE = 2;
-const size_t PAYLOAD_SIZE = VECTOR_SIZE * sizeof(float);
+const size_t PAYLOAD_SIZE = 2 * sizeof(float);
 const char START_MARKER = 0x02;
 const char END_MARKER = 0x03;
-const float msg[VECTOR_SIZE];
+const float msg[2];
 char rx_byte;
 
 // Variable definitions
@@ -28,20 +27,24 @@ const short ANGLE_TOLERANCE = 10;
 int Target_angle;
 short int motor_index;
 
-float receive(){
-    String line = Serial.readStringUntil('\n');
-    int comma = line.indexOf(',');
-    int index = line.substring(0, comma).toInt();
-    float angle = line.substring(comma + 1).toFloat();   
-    return index, angle;
+bool receive(int &index, float &angle) {
+  String line = Serial.readStringUntil('\n');
+  int comma = line.indexOf(',');
+  if (comma < 0) return false;
+  index = line.substring(0, comma).toInt();
+  angle = line.substring(comma + 1).toFloat();
+  return true;
 }
 
-int Comparison(int current, int target) {
+int comparison(int current, int target) {
   if (current < target - ANGLE_TOLERANCE){ 
-    return current ++;
+    return current + 1;
   }
   else if (current > target + ANGLE_TOLERANCE){
-     return current --;
+     return current - 1;
+  }
+  else{
+    return current;
   }
 }
 
@@ -50,22 +53,22 @@ void control(int index,float Target_angle){
   switch (index){
     case 0:
       //Shoulder Motor
-      shoulder_angle = Comparison(shoulder_angle,Target_angle);
+      shoulder_angle = comparison(shoulder_angle,Target_angle);
       shoulder_servo.write(shoulder_angle);  
       break;
     case 1:
       //elbow Motor
-      elbow_angle = Comparison(elbow_angle,Target_angle);
+      elbow_angle = comparison(elbow_angle,Target_angle);
       elbow_servo.write(elbow_angle);
       break;
     case 2:
       //Wrist Motor
-      wrist_angle = Comparison(wrist_angle,Target_angle);
+      wrist_angle = comparison(wrist_angle,Target_angle);
       wrist_servo.write(wrist_angle);
       break;
     case 3:
       // Claw Motor
-      printf("test");
+
       break;
     
     default:
@@ -82,12 +85,21 @@ void setup() {
   }
 
 void loop() {
-  if (Serial.available() < 1){
-    printf("no data");
+  for(int i =0; i < number_of_motors; i++){
+    bool ok;
+    if (Serial.available() > 0) {
+      int index;
+      float angle;
+      ok = receive(index, angle);
+      if (ok){
+       control(index, angle);
+      }
+      else{
+        break;
+      }
   }
-  else if(Serial.available() > 0){
-    motor_index, Target_angle = receive();    
-    control(motor_index, Target_angle);
+
+    Serial.println(ok ? "complete" : "bad");
   }
 
 }

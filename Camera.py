@@ -46,6 +46,7 @@ def calculate_positions(point1, point2):
 
 def transmit(index, angle):
     ser.write(f"{index},{angle:.2f}\n".encode())
+    print("Transmitted")
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -64,7 +65,6 @@ def main():
     ) as hands:
 
         while cap.isOpened():
-
             success, frame = cap.read()
 
             if not success:
@@ -129,6 +129,11 @@ def main():
             if cv2.waitKey(5) & 0xFF == ord('q'):
                 break
 
+            while True:
+                data = ser.readline().decode('utf-8').strip()
+
+                if(data):
+                    break
     cap.release()
     cv2.destroyAllWindows()
 
