@@ -2,13 +2,12 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import serial
-#ser = serial.Serial('/dev/ttyACM0', 9600)
+ser = serial.Serial('/dev/ttyACM0', 9600)
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 
-# Pose landmarks that make up the arms (RIGHT + right: shoulder, elbow, wrist)
 ARM_LANDMARKS = {
     mp_pose.PoseLandmark.RIGHT_SHOULDER,
     mp_pose.PoseLandmark.LEFT_SHOULDER,
@@ -26,7 +25,6 @@ ARM_CONNECTIONS = {
     (mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.LEFT_SHOULDER),
 }
 
-
 def draw_arm_skeleton(image, pose_landmarks, w, h):
     points = {}
     for lm_id in ARM_LANDMARKS:
@@ -41,20 +39,13 @@ def draw_arm_skeleton(image, pose_landmarks, w, h):
         if a in points and b in points:
             cv2.line(image, points[a], points[b], (0, 255, 255), 3)
 
-def calculate_positions(point1, point2,count):
-    result_x = point1.x - point2.x
-    result_y = point1.y - point2.y
-    angle = np.arctan((result_y/result_x))*180/np.pi
-    angle = round(angle,2)
-    angle = np.array([count,angle])
-    return(angle)
+def calculate_positions(point1, point2):
+    dx = point1.x - point2.x
+    dy = point1.y - point2.y
+    return round(float(np.degrees(np.arctan2(dy, dx))), 2)  # plain float
 
-def transmit(data):
-
-    print(data)
-    #ser.write(data)
-
-
+def transmit(index, angle):
+    ser.write(f"{index},{angle:.2f}\n".encode())
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -73,19 +64,19 @@ def main():
     ) as hands:
 
         while cap.isOpened():
+
             success, frame = cap.read()
+
             if not success:
                 print("Ignoring empty camera frame.")
                 continue
 
-            # Flip for a natural mirror view, convert BGR -> RGB for MediaPipe
             frame = cv2.flip(frame, 1)
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             rgb.flags.writeable = False
 
             pose_results = pose.process(rgb)
             hand_results = hands.process(rgb)
-
             rgb.flags.writeable = True
             h, w, _ = frame.shape
 
@@ -111,17 +102,12 @@ def main():
                 #pinky_dip = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_DIP]
                 #pinky_tip = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]
 
-                count = 0
-                shoulder_angle = calculate_positions(L_shoulder,L_elbow,count)
-                print("shoulder_angle = ")
-                transmit(shoulder_angle)
-                count += 1
-                elbow_angle = calculate_positions(L_shoulder,L_wrist,count)
-                print("elbow_angle = ")
-                transmit(elbow_angle)
-                #wrist_angle = calculate_positions(thumb_cmc,pinky_mcp)
-                #print("wrist_angle = ")
-                #transmit(wrist_angle)
+                shoulder_angle = calculate_positions(L_shoulder, L_elbow)
+                transmit(0, shoulder_angle)
+
+                elbow_angle = calculate_positions(L_shoulder, L_wrist)
+                transmit(1, elbow_angle)
+
                 
 
             # --- Draw arm skeleton (shoulders/elbows/wrists) ---
