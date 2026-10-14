@@ -11,20 +11,25 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 
+
+max_angle = 180
+min_angle = 0
+
+
 ARM_LANDMARKS = {
-    mp_pose.PoseLandmark.RIGHT_SHOULDER,
-    #mp_pose.PoseLandmark.LEFT_SHOULDER,
-    mp_pose.PoseLandmark.RIGHT_ELBOW,
-    #mp_pose.PoseLandmark.LEFT_ELBOW,
-    mp_pose.PoseLandmark.RIGHT_WRIST,
-    #mp_pose.PoseLandmark.LEFT_WRIST,
+    #mp_pose.PoseLandmark.RIGHT_SHOULDER,
+    mp_pose.PoseLandmark.LEFT_SHOULDER,
+    #mp_pose.PoseLandmark.RIGHT_ELBOW,
+    mp_pose.PoseLandmark.LEFT_ELBOW,
+    #mp_pose.PoseLandmark.RIGHT_WRIST,
+    mp_pose.PoseLandmark.LEFT_WRIST,
 }
 
 ARM_CONNECTIONS = {
-    (mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.RIGHT_ELBOW),
-    (mp_pose.PoseLandmark.RIGHT_ELBOW, mp_pose.PoseLandmark.RIGHT_WRIST),
-    #(mp_pose.PoseLandmark.LEFT_SHOULDER, mp_pose.PoseLandmark.LEFT_ELBOW),
-    #(mp_pose.PoseLandmark.LEFT_ELBOW, mp_pose.PoseLandmark.LEFT_WRIST),
+    #(mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.RIGHT_ELBOW),
+    #(mp_pose.PoseLandmark.RIGHT_ELBOW, mp_pose.PoseLandmark.RIGHT_WRIST),
+    (mp_pose.PoseLandmark.LEFT_SHOULDER, mp_pose.PoseLandmark.LEFT_ELBOW),
+    (mp_pose.PoseLandmark.LEFT_ELBOW, mp_pose.PoseLandmark.LEFT_WRIST),
     #(mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.LEFT_SHOULDER),
 }
 
@@ -43,14 +48,25 @@ def draw_arm_skeleton(image, pose_landmarks, w, h):
             cv2.line(image, points[a], points[b], (0, 255, 255), 3)
 
 def calculate_positions(point1, point2):
-    dx = point1.x - point2.x
-    dy = point1.y - point2.y
-    return round(float(np.degrees(np.arctan2(dy, dx))), 2)  # plain float
+    #elbow - shoulder or wrist - elbow
+    dx = point2.x - point1.x
+    dy = point2.y - point1.y
+    return round(float(np.degrees(np.arctan2(-1*dy, dx))), 2)  # plain float
 
 def transmit(index, angle):
     ser.write(f"{index},{angle:.2f}\n".encode())
     print("Transmitted")
     return
+
+def convert(point1,point2):
+    angle = calculate_positions(point1,point2)
+    if(angle > max_angle):
+        angle = 180
+    if(angle < min_angle):
+        angle = 0
+    return angle
+
+
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -99,11 +115,12 @@ def main():
                 #thumb_mcp = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_MCP]
                 #thumb_ip  = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_IP]
                 #thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
-                shoulder_angle = calculate_positions(L_shoulder, L_elbow)
+                shoulder_angle = convert(R_shoulder, R_elbow)
+                print("shoulder angle is :", shoulder_angle)
                 transmit(0, shoulder_angle)
 
-                elbow_angle = calculate_positions(L_shoulder, L_wrist)
-                transmit(1, elbow_angle)   
+                elbow_angle = calculate_positions(R_shoulder, R_wrist)
+                #transmit(1, elbow_angle)   
 
             # --- Draw arm skeleton (shoulders/elbows/wrists) ---
             if pose_results.pose_landmarks:
