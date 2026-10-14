@@ -2,7 +2,10 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import serial
+import time
 ser = serial.Serial('/dev/ttyACM0', 9600)
+time.sleep(2)
+ser.reset_input_buffer()
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
@@ -10,19 +13,19 @@ mp_hands = mp.solutions.hands
 
 ARM_LANDMARKS = {
     mp_pose.PoseLandmark.RIGHT_SHOULDER,
-    mp_pose.PoseLandmark.LEFT_SHOULDER,
+    #mp_pose.PoseLandmark.LEFT_SHOULDER,
     mp_pose.PoseLandmark.RIGHT_ELBOW,
-    mp_pose.PoseLandmark.LEFT_ELBOW,
+    #mp_pose.PoseLandmark.LEFT_ELBOW,
     mp_pose.PoseLandmark.RIGHT_WRIST,
-    mp_pose.PoseLandmark.LEFT_WRIST,
+    #mp_pose.PoseLandmark.LEFT_WRIST,
 }
 
 ARM_CONNECTIONS = {
     (mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.RIGHT_ELBOW),
     (mp_pose.PoseLandmark.RIGHT_ELBOW, mp_pose.PoseLandmark.RIGHT_WRIST),
-    (mp_pose.PoseLandmark.LEFT_SHOULDER, mp_pose.PoseLandmark.LEFT_ELBOW),
-    (mp_pose.PoseLandmark.LEFT_ELBOW, mp_pose.PoseLandmark.LEFT_WRIST),
-    (mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.LEFT_SHOULDER),
+    #(mp_pose.PoseLandmark.LEFT_SHOULDER, mp_pose.PoseLandmark.LEFT_ELBOW),
+    #(mp_pose.PoseLandmark.LEFT_ELBOW, mp_pose.PoseLandmark.LEFT_WRIST),
+    #(mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.LEFT_SHOULDER),
 }
 
 def draw_arm_skeleton(image, pose_landmarks, w, h):
@@ -47,6 +50,7 @@ def calculate_positions(point1, point2):
 def transmit(index, angle):
     ser.write(f"{index},{angle:.2f}\n".encode())
     print("Transmitted")
+    return
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -95,20 +99,11 @@ def main():
                 #thumb_mcp = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_MCP]
                 #thumb_ip  = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_IP]
                 #thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
-                
-                #Pinky Controls
-                #pinky_mcp = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_MCP]
-                #pinky_pip = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_PIP]
-                #pinky_dip = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_DIP]
-                #pinky_tip = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]
-
                 shoulder_angle = calculate_positions(L_shoulder, L_elbow)
                 transmit(0, shoulder_angle)
 
                 elbow_angle = calculate_positions(L_shoulder, L_wrist)
-                transmit(1, elbow_angle)
-
-                
+                transmit(1, elbow_angle)   
 
             # --- Draw arm skeleton (shoulders/elbows/wrists) ---
             if pose_results.pose_landmarks:
@@ -129,11 +124,15 @@ def main():
             if cv2.waitKey(5) & 0xFF == ord('q'):
                 break
 
-            while True:
-                data = ser.readline().decode('utf-8').strip()
+            while ser.in_waiting:
+                data = ser.readline().decode('utf-8', errors='ignore').strip()
+                if data:
+                    print("Arduino says:", data)
 
-                if(data):
-                    break
+
+
+
+
     cap.release()
     cv2.destroyAllWindows()
 

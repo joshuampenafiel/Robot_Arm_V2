@@ -48,7 +48,6 @@ int comparison(int current, int target) {
   }
 }
 
-
 void control(int index,float Target_angle){
   switch (index){
     case 0:
@@ -68,14 +67,11 @@ void control(int index,float Target_angle){
       break;
     case 3:
       // Claw Motor
-
-      break;
-    
+      break;   
     default:
       break;
   }
 }
-
 
 void setup() {  
   Serial.begin(9600);
@@ -99,7 +95,7 @@ void loop() {
       }
   }
 
-    Serial.println(ok ? "complete" : "bad");
+    Serial.println(ok ? shoulder_angle : 0);
   }
 
 }
