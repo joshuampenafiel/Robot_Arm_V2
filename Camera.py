@@ -53,8 +53,8 @@ def calculate_positions(point1, point2):
     dy = point2.y - point1.y
     return round(float(np.degrees(np.arctan2(-1*dy, dx))), 2)  # plain float
 
-def transmit(index, angle):
-    ser.write(f"{index},{angle:.2f}\n".encode())
+def transmit(shoulder, elbow):
+    ser.write(f"{shoulder},{elbow:.2f}\n".encode())
     print("Transmitted")
     return
 
@@ -65,8 +65,6 @@ def convert(point1,point2):
     if(angle < min_angle):
         angle = 0
     return angle
-
-
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -103,24 +101,13 @@ def main():
             if pose_results.pose_landmarks:
                 landmarks = pose_results.pose_landmarks.landmark
 
-                L_shoulder = landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER]
-                L_elbow = landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW]
-                L_wrist = landmarks[mp_pose.PoseLandmark.RIGHT_WRIST]
                 R_shoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER]
                 R_elbow = landmarks[mp_pose.PoseLandmark.LEFT_ELBOW]
                 R_wrist = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
-                
-                #Thumb controls
-                #thumb_cmc = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_CMC]
-                #thumb_mcp = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_MCP]
-                #thumb_ip  = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_IP]
-                #thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
-                shoulder_angle = convert(R_shoulder, R_elbow)
-                print("shoulder angle is :", shoulder_angle)
-                transmit(0, shoulder_angle)
 
-                elbow_angle = calculate_positions(R_shoulder, R_wrist)
-                #transmit(1, elbow_angle)   
+                shoulder_angle = convert(R_shoulder, R_elbow)
+                elbow_angle = convert(R_elbow, R_wrist)
+                transmit(shoulder_angle, elbow_angle)   
 
             # --- Draw arm skeleton (shoulders/elbows/wrists) ---
             if pose_results.pose_landmarks:
@@ -145,10 +132,6 @@ def main():
                 data = ser.readline().decode('utf-8', errors='ignore').strip()
                 if data:
                     print("Arduino says:", data)
-
-
-
-
 
     cap.release()
     cv2.destroyAllWindows()

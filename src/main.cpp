@@ -1,101 +1,88 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-//Servo definitions
-Servo shoulder_servo;
-Servo elbow_servo;
-Servo wrist_servo;
 
-const short shoulder_servo_pin=2;
-const short elbow_servo_pin=3;
-const short wrist_servo_pin=4;
+class MOTOR {
+  private:
+    Servo servo;
+    int pin;
+    int angle;
 
-int shoulder_angle = 0;
-int elbow_angle = 0;
-int wrist_angle = 0;
-const int number_of_motors = 3;
-//Serial definitions
+  public:
+    MOTOR(int pin, int startAngle = 90) {
+        this->pin = pin;
+        angle = startAngle;
+    }
 
-const size_t PAYLOAD_SIZE = 2 * sizeof(float);
-const char START_MARKER = 0x02;
-const char END_MARKER = 0x03;
-const float msg[2];
-char rx_byte;
+    void begin() {
+        servo.attach(pin);
+        servo.write(angle);
+    }
 
-// Variable definitions
-const short ANGLE_TOLERANCE = 10;
-int Target_angle;
-short int motor_index;
+    void set_angle(int reading) {
+      angle = compare(reading);  
+      servo.write(angle);
+    }
 
-bool receive(int &index, float &angle) {
+    int compare(int reading){
+      if (reading - 10 > 0 && angle < 180) {
+        angle++;
+        }
+      else if (reading + 10 < 0 && angle > 0) {
+        angle--;
+      }
+      return angle;
+    }
+
+};
+
+class ARM {
+  private:
+    MOTOR shoulder, elbow, wrist, claw;
+  public:
+    ARM(int (sPin), int (ePin), int (wPin), int(cPin)):shoulder(sPin), elbow(ePin),wrist(wPin),claw(cPin){}
+    void begin(){
+      shoulder.begin();
+      elbow.begin();
+      wrist.begin();
+      claw.begin();
+  }
+    bool receive() {
+        if (!Serial.available()) return false;
+        String line = Serial.readStringUntil('\n');
+
+        int c1 = line.indexOf(',');
+        int c2 = line.indexOf(',', c1 + 1);
+        int c3 = line.indexOf(',', c2 + 1);
+        if (c1 < 0 || c2 < 0 || c3 < 0) return false;
+
+        shoulder.set_angle(line.substring(0, c1).toInt());
+        elbow.set_angle(line.substring(c1 + 1, c2).toInt());
+        wrist.set_angle(line.substring(c2 + 1, c3).toInt());
+        claw.set_angle(line.substring(c3 + 1).toInt());
+        return true;
+    }
+};
+
+
+
+//Functions
+bool receive(int &shoulder, int &elbow, int &wrist, int &claw) {
   String line = Serial.readStringUntil('\n');
   int comma = line.indexOf(',');
   if (comma < 0) return false;
-  index = line.substring(0, comma).toInt();
-  angle = line.substring(comma + 1).toFloat();
+  shoulder = line.substring(0, comma).toInt();
+  elbow = line.substring(comma + 1).toFloat();
+  wrist = line.substring(comma + 2).toInt();
+  claw = line.substring(comma + 3).toFloat();
   return true;
 }
-
-int comparison(int current, int target) {
-  if (current < target - ANGLE_TOLERANCE){ 
-    return current + 1;
-  }
-  else if (current > target + ANGLE_TOLERANCE){
-     return current - 1;
-  }
-  else{
-    return current;
-  }
-}
-
-void control(int index,float Target_angle){
-  switch (index){
-    case 0:
-      //Shoulder Motor
-      shoulder_angle = comparison(shoulder_angle,Target_angle);
-      shoulder_servo.write(shoulder_angle);  
-      break;
-    case 1:
-      //elbow Motor
-      elbow_angle = comparison(elbow_angle,Target_angle);
-      elbow_servo.write(elbow_angle);
-      break;
-    case 2:
-      //Wrist Motor
-      wrist_angle = comparison(wrist_angle,Target_angle);
-      wrist_servo.write(wrist_angle);
-      break;
-    case 3:
-      // Claw Motor
-      break;   
-    default:
-      break;
-  }
-}
-
+ARM arm(2,3,4,5);
 void setup() {  
   Serial.begin(9600);
-  shoulder_servo.attach(shoulder_servo_pin);
-  elbow_servo.attach(elbow_servo_pin);
-  wrist_servo.attach(wrist_servo_pin);
+  arm.begin();
   }
 
 void loop() {
-  for(int i =0; i < number_of_motors; i++){
-    bool ok;
-    if (Serial.available() > 0) {
-      int index;
-      float angle;
-      ok = receive(index, angle);
-      if (ok){
-       control(index, angle);
-      }
-      else{
-        break;
-      }
-  }
-
-    Serial.println(ok ? shoulder_angle : 0);
-  }
-
+  arm.receive();
 }
