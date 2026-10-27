@@ -6,10 +6,10 @@ class MOTOR {
     Servo servo;
     int pin;
     int angle;
-     const int Step_distance = 2;
+    const int Step_distance = 2;
     int tol = 2;
   public:
-    MOTOR(int pin, int startAngle = 0) {
+    MOTOR(int pin, int startAngle = 90) {
         this->pin = pin;
         angle = startAngle;
     }
@@ -20,7 +20,6 @@ class MOTOR {
     }
 
     void set_angle(int reading) {
-
       angle = compare(reading);  
       servo.write(angle);
     }

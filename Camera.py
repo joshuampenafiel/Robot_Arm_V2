@@ -11,7 +11,6 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 mp_hands = mp.solutions.hands
 
-
 max_angle = 180
 min_angle = 0
 angle_tolerance = 2
@@ -52,8 +51,13 @@ def draw_arm_skeleton(image, pose_landmarks, w, h):
 
 def calculate_positions(point1, point2):
     dx = point2.x - point1.x
-    dy = point2.y - point1.y
-    angle = np.degrees(np.arctan2(-1*dy, dx))
+    dy = (-point2.y) - (-point1.y)
+
+    angle = np.degrees(np.arctan2(dy, dx))
+    int(angle)
+    angle += 90
+
+    print(angle)
     if(angle > max_angle):
         angle = 180
     if(angle < min_angle):
@@ -63,7 +67,8 @@ def calculate_positions(point1, point2):
 def transmit(shoulder, elbow):
     global last_shoulder, last_elbow
     if shoulder == last_shoulder and elbow == last_elbow:
-        print("Not enough change")
+        #print("Not enough change")
+        pass
     else:
         ser.write(f"{shoulder},{elbow},0,0\n".encode())
     last_shoulder = shoulder
@@ -85,10 +90,8 @@ def main():
         min_detection_confidence=0.6,
         min_tracking_confidence=0.6,
     ) as hands:
-
         while cap.isOpened():
             success, frame = cap.read()
-
             if not success:
                 print("Ignoring empty camera frame.")
                 continue
@@ -104,11 +107,10 @@ def main():
 
             if pose_results.pose_landmarks:
                 landmarks = pose_results.pose_landmarks.landmark
-
                 R_shoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER]
                 R_elbow = landmarks[mp_pose.PoseLandmark.LEFT_ELBOW]
                 R_wrist = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
-
+                
                 shoulder_angle = calculate_positions(R_shoulder, R_elbow)
                 elbow_angle = calculate_positions(R_elbow, R_wrist)
                 transmit(shoulder_angle, elbow_angle)
@@ -128,18 +130,16 @@ def main():
                     )
 
             cv2.imshow("Arm + Finger Skeleton Tracker", frame)
-
             if cv2.waitKey(5) & 0xFF == ord('q'):
                 break
 
             while ser.in_waiting:
                 data = ser.readline().decode('utf-8', errors='ignore').strip()
                 if data:
-                    print("Arduino says:", data)
-
+                    #print("Arduino says:", data)
+                    pass
     cap.release()
     cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     main()
