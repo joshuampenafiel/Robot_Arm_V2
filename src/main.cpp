@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-
 class MOTOR {
   private:
     Servo servo;
@@ -9,7 +8,7 @@ class MOTOR {
     int angle;
 
   public:
-    MOTOR(int pin, int startAngle = 90) {
+    MOTOR(int pin, int startAngle = 0) {
         this->pin = pin;
         angle = startAngle;
     }
@@ -23,7 +22,6 @@ class MOTOR {
       angle = compare(reading);  
       servo.write(angle);
     }
-
     int compare(int reading){
       if (reading - 10 > 0 && angle < 180) {
         angle++;
@@ -33,7 +31,6 @@ class MOTOR {
       }
       return angle;
     }
-
 };
 
 class ARM {
@@ -60,29 +57,19 @@ class ARM {
         elbow.set_angle(line.substring(c1 + 1, c2).toInt());
         wrist.set_angle(line.substring(c2 + 1, c3).toInt());
         claw.set_angle(line.substring(c3 + 1).toInt());
+        Serial.println("received");
         return true;
     }
 };
 
-
-
 //Functions
-bool receive(int &shoulder, int &elbow, int &wrist, int &claw) {
-  String line = Serial.readStringUntil('\n');
-  int comma = line.indexOf(',');
-  if (comma < 0) return false;
-  shoulder = line.substring(0, comma).toInt();
-  elbow = line.substring(comma + 1).toFloat();
-  wrist = line.substring(comma + 2).toInt();
-  claw = line.substring(comma + 3).toFloat();
-  return true;
-}
 ARM arm(2,3,4,5);
-void setup() {  
-  Serial.begin(9600);
+
+void setup() {
+  Serial.begin(115200);
   arm.begin();
   }
 
-void loop() {
+void loop(){
   arm.receive();
 }

@@ -3,7 +3,7 @@ import mediapipe as mp
 import numpy as np
 import serial
 import time
-ser = serial.Serial('/dev/ttyACM0', 9600)
+ser = serial.Serial('/dev/ttyACM0', 115200)
 time.sleep(2)
 ser.reset_input_buffer()
 mp_drawing = mp.solutions.drawing_utils
@@ -14,7 +14,10 @@ mp_hands = mp.solutions.hands
 
 max_angle = 180
 min_angle = 0
+angle_tolerance = 10 
 
+last_shoulder = None
+last_elbow = None
 
 ARM_LANDMARKS = {
     #mp_pose.PoseLandmark.RIGHT_SHOULDER,
@@ -48,23 +51,24 @@ def draw_arm_skeleton(image, pose_landmarks, w, h):
             cv2.line(image, points[a], points[b], (0, 255, 255), 3)
 
 def calculate_positions(point1, point2):
-    #elbow - shoulder or wrist - elbow
     dx = point2.x - point1.x
     dy = point2.y - point1.y
-    return round(float(np.degrees(np.arctan2(-1*dy, dx))), 2)  # plain float
-
-def transmit(shoulder, elbow):
-    ser.write(f"{shoulder},{elbow:.2f}\n".encode())
-    print("Transmitted")
-    return
-
-def convert(point1,point2):
-    angle = calculate_positions(point1,point2)
+    angle = np.degrees(np.arctan2(-1*dy, dx))
     if(angle > max_angle):
         angle = 180
     if(angle < min_angle):
         angle = 0
-    return angle
+    return angle 
+
+def transmit(shoulder, elbow):
+    global last_shoulder, last_elbow
+    if shoulder == last_shoulder and elbow == last_elbow:
+        print("Not enough change")
+    else:
+        ser.write(f"{shoulder},{elbow},0,0\n".encode())
+    last_shoulder = shoulder
+    last_elbow=elbow
+    return
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -105,9 +109,9 @@ def main():
                 R_elbow = landmarks[mp_pose.PoseLandmark.LEFT_ELBOW]
                 R_wrist = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
 
-                shoulder_angle = convert(R_shoulder, R_elbow)
-                elbow_angle = convert(R_elbow, R_wrist)
-                transmit(shoulder_angle, elbow_angle)   
+                shoulder_angle = calculate_positions(R_shoulder, R_elbow)
+                elbow_angle = calculate_positions(R_elbow, R_wrist)
+                transmit(shoulder_angle, elbow_angle)
 
             # --- Draw arm skeleton (shoulders/elbows/wrists) ---
             if pose_results.pose_landmarks:
