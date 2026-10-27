@@ -6,7 +6,8 @@ class MOTOR {
     Servo servo;
     int pin;
     int angle;
-
+     const int Step_distance = 2;
+    int tol = 2;
   public:
     MOTOR(int pin, int startAngle = 0) {
         this->pin = pin;
@@ -19,24 +20,21 @@ class MOTOR {
     }
 
     void set_angle(int reading) {
-      int last_angle = get_angle();
-      angle = compare(reading,last_angle);  
+
+      angle = compare(reading);  
       servo.write(angle);
     }
-    int compare(int reading,int last_angle) {
-      if (reading - last_angle > 10 && last_angle < 180) {
-        angle++;
+
+    int compare(int reading) {
+      if (reading - angle > tol && angle < 180) {
+        angle += Step_distance;
       } 
-      else if (last_angle - reading > 10 && last_angle > 0) {
-        angle--;
+      else if (angle - reading > tol && angle > 0) {
+        angle-= Step_distance;
       }
       return angle;
     }
-    
-    int get_angle(){
-      return angle;
-    }
-};
+  };
 
 class ARM {
   private:

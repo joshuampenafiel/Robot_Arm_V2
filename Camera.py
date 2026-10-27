@@ -14,7 +14,7 @@ mp_hands = mp.solutions.hands
 
 max_angle = 180
 min_angle = 0
-angle_tolerance = 10 
+angle_tolerance = 2
 
 last_shoulder = None
 last_elbow = None
