@@ -19,16 +19,21 @@ class MOTOR {
     }
 
     void set_angle(int reading) {
-      angle = compare(reading);  
+      int last_angle = get_angle();
+      angle = compare(reading,last_angle);  
       servo.write(angle);
     }
-    int compare(int reading){
-      if (reading - 10 > 0 && angle < 180) {
+    int compare(int reading,int last_angle) {
+      if (reading - last_angle > 10 && last_angle < 180) {
         angle++;
-        }
-      else if (reading + 10 < 0 && angle > 0) {
+      } 
+      else if (last_angle - reading > 10 && last_angle > 0) {
         angle--;
       }
+      return angle;
+    }
+    
+    int get_angle(){
       return angle;
     }
 };
