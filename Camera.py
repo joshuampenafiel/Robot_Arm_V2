@@ -14,10 +14,9 @@ mp_hands = mp.solutions.hands
 max_angle = 180
 min_angle = 0
 angle_tolerance = 2
-
-last_shoulder = None
-last_elbow = None
-
+data = []
+last_pos = [90,90,90,90]
+TRANSMISSION_COUNTER = 0
 ARM_LANDMARKS = {
     #mp_pose.PoseLandmark.RIGHT_SHOULDER,
     mp_pose.PoseLandmark.LEFT_SHOULDER,
@@ -57,23 +56,31 @@ def calculate_positions(point1, point2):
     int(angle)
     angle += 90
 
-    print(angle)
     if(angle > max_angle):
         angle = 180
     if(angle < min_angle):
         angle = 0
     return angle 
 
-def transmit(shoulder, elbow):
-    global last_shoulder, last_elbow
-    if shoulder == last_shoulder and elbow == last_elbow:
-        #print("Not enough change")
-        pass
-    else:
-        ser.write(f"{shoulder},{elbow},0,0\n".encode())
-    last_shoulder = shoulder
-    last_elbow=elbow
+def transmit(data):
+    global TRANSMISSION_COUNTER
+    global last_pos
+    if TRANSMISSION_COUNTER != 2:
+        data.append(last_pos[2])
+        data.append(last_pos[3])
+    
+    ser.write((",".join(str(int(v)) for v in data) + "\n").encode())
+    TRANSMISSION_COUNTER = 0
+    last_pos = list(data)
+    data.clear()
     return
+
+def add_data(data1,data2):
+    data.append(data1)
+    data.append(data2)
+    global TRANSMISSION_COUNTER
+    TRANSMISSION_COUNTER += 1
+    return 
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -110,10 +117,10 @@ def main():
                 R_shoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER]
                 R_elbow = landmarks[mp_pose.PoseLandmark.LEFT_ELBOW]
                 R_wrist = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
-                
+
                 shoulder_angle = calculate_positions(R_shoulder, R_elbow)
                 elbow_angle = calculate_positions(R_elbow, R_wrist)
-                transmit(shoulder_angle, elbow_angle)
+                add_data(shoulder_angle,elbow_angle)
 
             # --- Draw arm skeleton (shoulders/elbows/wrists) ---
             if pose_results.pose_landmarks:
@@ -128,6 +135,16 @@ def main():
                         mp_drawing_styles.get_default_hand_landmarks_style(),
                         mp_drawing_styles.get_default_hand_connections_style(),
                     )
+
+                thumb_cmc = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_CMC]
+                thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
+                pinky_mcp = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_MCP]
+                    
+                wrist_angle = calculate_positions(pinky_mcp,thumb_cmc)
+                claw_angle = calculate_positions(pinky_mcp,thumb_tip)
+                add_data(wrist_angle,claw_angle)
+            
+            transmit(data)
 
             cv2.imshow("Arm + Finger Skeleton Tracker", frame)
             if cv2.waitKey(5) & 0xFF == ord('q'):
