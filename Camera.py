@@ -68,7 +68,6 @@ def transmit(data):
     if TRANSMISSION_COUNTER != 2:
         data.append(last_pos[2])
         data.append(last_pos[3])
-    
     ser.write((",".join(str(int(v)) for v in data) + "\n").encode())
     TRANSMISSION_COUNTER = 0
     last_pos = list(data)
@@ -76,13 +75,14 @@ def transmit(data):
     return
 
 def add_data(data1,data2):
-    data.append(data1)
-    data.append(data2)
+    data.append(int(data1))
+    data.append(int(data2))
     global TRANSMISSION_COUNTER
     TRANSMISSION_COUNTER += 1
     return 
 
 def main():
+    global data
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Could not open webcam. Check your camera index/permissions.")
@@ -151,8 +151,8 @@ def main():
                 break
 
             while ser.in_waiting:
-                data = ser.readline().decode('utf-8', errors='ignore').strip()
-                if data:
+                reply = ser.readline().decode('utf-8', errors='ignore').strip()
+                if reply:
                     #print("Arduino says:", data)
                     pass
     cap.release()
