@@ -16,6 +16,10 @@ min_angle = 0
 angle_tolerance = 2
 data = []
 last_pos = [90,90,90,90]
+
+bicep_length = 1
+forearm_length = 1
+
 TRANSMISSION_COUNTER = 0
 ARM_LANDMARKS = {
     #mp_pose.PoseLandmark.RIGHT_SHOULDER,
@@ -48,24 +52,10 @@ def draw_arm_skeleton(image, pose_landmarks, w, h):
         if a in points and b in points:
             cv2.line(image, points[a], points[b], (0, 255, 255), 3)
 
-def calculate_positions(point1, point2):
-    dx = point2.x - point1.x
-    dy = (-point2.y) - (-point1.y)
-
-    angle = np.degrees(np.arctan2(dy, dx))
-    int(angle)
-    angle += 90
-
-    if(angle > max_angle):
-        angle = 180
-    if(angle < min_angle):
-        angle = 0
-    return angle 
-
 def transmit(data):
     global TRANSMISSION_COUNTER
     global last_pos
-    if TRANSMISSION_COUNTER != 2:
+    if TRANSMISSION_COUNTER != 3:
         data.append(last_pos[2])
         data.append(last_pos[3])
     ser.write((",".join(str(int(v)) for v in data) + "\n").encode())
@@ -74,12 +64,44 @@ def transmit(data):
     data.clear()
     return
 
-def add_data(data1,data2):
-    data.append(int(data1))
-    data.append(int(data2))
+def add_data(q1,q2,q3):
+    data.append(float(q1))
+    data.append(float(q2))
+    data.append(float(q3))
     global TRANSMISSION_COUNTER
     TRANSMISSION_COUNTER += 1
     return 
+
+def IK(bicep,forearm,target):
+    x,y,z = target
+
+    r = np.hypot(x,y)
+    q1 = np.arctan2(y,x)
+    d = np.hypot(r,z)
+    if d > bicep + forearm:
+        print("too far away ")
+        return
+    if d< abs(bicep - forearm):
+        print("too close")
+        return
+
+    cos_D = (forearm**2-d**2+bicep**2)/(2*forearm*bicep)
+
+    q3 = np.pi - np.arccos(np.clip(cos_D, -1, 1))
+
+    # Shoulder: angle between link1 and target direction
+    phi = np.arctan2(z, r)
+    cos_beta = (bicep**2 + d**2 - forearm**2) / (2 * bicep * d)
+    beta = np.arccos(np.clip(cos_beta, -1, 1))
+    q2 = phi - beta  # elbow-up
+
+
+    r_fk = bicep*np.cos(q2) + forearm*np.cos(q2 + q3)   
+    z_fk = bicep*np.sin(q2) + forearm*np.sin(q2 + q3)
+    x_fk = r_fk*np.cos(q1)
+    y_fk = r_fk*np.sin(q1)
+    print("x:", x_fk, "y:", y_fk, "z:", z_fk)
+    return q1, q2, q3
 
 def main():
     global data
@@ -114,13 +136,11 @@ def main():
 
             if pose_results.pose_landmarks:
                 landmarks = pose_results.pose_landmarks.landmark
-                R_shoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER]
-                R_elbow = landmarks[mp_pose.PoseLandmark.LEFT_ELBOW]
                 R_wrist = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
 
-                shoulder_angle = calculate_positions(R_shoulder, R_elbow)
-                elbow_angle = calculate_positions(R_elbow, R_wrist)
-                add_data(shoulder_angle,elbow_angle)
+                target = R_wrist
+                q1,q2,q3 = IK(bicep_length,forearm_length,target)
+                add_data(q1,q2,q3)
 
             # --- Draw arm skeleton (shoulders/elbows/wrists) ---
             if pose_results.pose_landmarks:
