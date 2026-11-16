@@ -71,7 +71,6 @@ void setup() {
   Serial.begin(115200);
   arm.begin();
   }
-
 void loop(){
   arm.receive();
 }
