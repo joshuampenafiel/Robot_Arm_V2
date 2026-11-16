@@ -8,9 +8,9 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "/home/joshua/Documents/PlatformIO/Projects/Robot_Arm_4DOF/include",
-                "/home/joshua/Documents/PlatformIO/Projects/Robot_Arm_4DOF/src",
-                "/home/joshua/Documents/PlatformIO/Projects/Robot_Arm_4DOF/.pio/libdeps/uno/Servo/src",
+                "/home/joshua/Documents/PlatformIO/Projects/Robot_Arm_V2/Robot_Arm_V2_Main/include",
+                "/home/joshua/Documents/PlatformIO/Projects/Robot_Arm_V2/Robot_Arm_V2_Main/src",
+                "/home/joshua/Documents/PlatformIO/Projects/Robot_Arm_V2/Robot_Arm_V2_Main/.pio/libdeps/uno/Servo/src",
                 "/home/joshua/.platformio/packages/framework-arduino-avr/cores/arduino",
                 "/home/joshua/.platformio/packages/framework-arduino-avr/variants/standard",
                 "/home/joshua/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
@@ -23,9 +23,9 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "/home/joshua/Documents/PlatformIO/Projects/Robot_Arm_4DOF/include",
-                    "/home/joshua/Documents/PlatformIO/Projects/Robot_Arm_4DOF/src",
-                    "/home/joshua/Documents/PlatformIO/Projects/Robot_Arm_4DOF/.pio/libdeps/uno/Servo/src",
+                    "/home/joshua/Documents/PlatformIO/Projects/Robot_Arm_V2/Robot_Arm_V2_Main/include",
+                    "/home/joshua/Documents/PlatformIO/Projects/Robot_Arm_V2/Robot_Arm_V2_Main/src",
+                    "/home/joshua/Documents/PlatformIO/Projects/Robot_Arm_V2/Robot_Arm_V2_Main/.pio/libdeps/uno/Servo/src",
                     "/home/joshua/.platformio/packages/framework-arduino-avr/cores/arduino",
                     "/home/joshua/.platformio/packages/framework-arduino-avr/variants/standard",
                     "/home/joshua/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
