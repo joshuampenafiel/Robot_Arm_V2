@@ -46,13 +46,8 @@ class CAMERA:
 
         pose_results = self.pose.process(rgb)
         hand_results = self.hand.process(rgb)
+        print("    Read complete")
         return frame, pose_results.pose_landmarks, hand_results.multi_hand_landmarks
-    
-    def close(self):
-        self.cap.release()
-        self.pose.close()
-        self.hand.close()
-        return
     
     def draw_arm_skeleton(self, image, pose_landmarks):
         points = {}
@@ -66,15 +61,14 @@ class CAMERA:
 
         for a, b in self.ARM_CONNECTIONS:
             if a in points and b in points:
-                cv2.line(image, points[a], points[b], (0, 255, 255), 3)
-        
-    def target(self):
-        return self.lm.x,self.lm.y,self.lm.z
-
+                cv2.line(image, points[a], points[b], (0, 255, 255), 3)   
+        print("    draw arm complete")
+  
     def draw_hand_skeleton(self, frame, hand_landmarks_list):
+        
         self.hand_landmarks = None   
         if not hand_landmarks_list:
-            return
+             return False
         for self.hand_landmarks in hand_landmarks_list:
             mp_drawing.draw_landmarks(
                 frame,
@@ -83,29 +77,38 @@ class CAMERA:
                 mp_drawing_styles.get_default_hand_landmarks_style(),
                 mp_drawing_styles.get_default_hand_connections_style()
             )
-#        print("thumb_tip = ",self.thumb_tip,"\n")
-#        print("pinky_mcp = ",self.thumb_tip,"\n")
+        print("draw hand complete")
+        return True
+
+    def target(self):
+        print("    target complete")
+        return self.lm.x,self.lm.y,self.lm.z
+
+    def hand_check(self):
+        thumb_tip = self.hand_landmarks.landmark[mp_hand.HandLandmark.THUMB_TIP]
+        pinky_mcp = self.hand_landmarks.landmark[mp_hand.HandLandmark.PINKY_MCP]
+        x_check = thumb_tip.x - pinky_mcp.x
+        y_check = thumb_tip.y - pinky_mcp.y
+        z_check = thumb_tip.z - pinky_mcp.z
+        print("    The x_check is",x_check)
+        print("    The y_check is",y_check)
+        print("    The z_check is",z_check)
+
+        if (abs(x_check) <= config.HAND_TOL and
+            abs(y_check) <= config.HAND_TOL and
+            abs(z_check) <= config.HAND_TOL):
+            print("    close hand")
+            return True
+        return False
 
     def quit_check(self):
         if cv2.waitKey(5) & 0xFF == ord('q'):
             return True
         return False    
 
-    def hand_check(self):
-        #thumb_cmc = self.hand_landmarks.landmark[mp_hand.HandLandmark.THUMB_CMC]
-        thumb_tip = self.hand_landmarks.landmark[mp_hand.HandLandmark.THUMB_TIP]
-        pinky_mcp = self.hand_landmarks.landmark[mp_hand.HandLandmark.PINKY_MCP]
-        x_check = thumb_tip.x - pinky_mcp.x
-        y_check = thumb_tip.y - pinky_mcp.y
-        z_check = thumb_tip.z - pinky_mcp.z
-        print("The x_check is",x_check)
-        print("The y_check is",y_check)
-        print("The z_check is",z_check)
-
-        if (abs(x_check) <= config.HAND_TOL and
-            abs(y_check) <= config.HAND_TOL and
-            abs(z_check) <= config.HAND_TOL):
-            print("close hand")
-            return True
-        return False
+    def close(self):
+        self.cap.release()
+        self.pose.close()
+        self.hand.close()
+        return
     

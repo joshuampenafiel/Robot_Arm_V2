@@ -4,7 +4,6 @@ import serial
 
 
 class ARDUINO:
-
     def __init__(self):
             self.ser = serial.Serial(config.SERIAL_PORT, config.BAUD_RATE)
             time.sleep(config.SERIAL_STARTUP_DELAY)
@@ -13,9 +12,9 @@ class ARDUINO:
             self.last_pos = [config.HOME_POS]
             return
 
-    def add_data(self,q1,q2,q3):
+    def add_data(self,q1,q2,q3,hand_check):
         self.data=[]
-        self.data=[float(q1),float(q2),float(q3)]
+        self.data=[float(q1),float(q2),float(q3),bool(hand_check)]
         return 
 
     def transmit(self):
