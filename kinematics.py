@@ -6,6 +6,7 @@ forearm = config.FOREARM_LENGTH
 class KINEMATICS:
     def IK(self, target):
         self.x,self.y,self.z = target
+        
         r = np.hypot(self.x,self.y)
         q1 = np.arctan2(self.y,self.x)
         d = np.hypot(r,self.z)
@@ -29,7 +30,7 @@ class KINEMATICS:
         self.z_fk = bicep*np.sin(q2) + forearm*np.sin(q2 + q3)
         self.x_fk = r_fk*np.cos(q1)
         self.y_fk = r_fk*np.sin(q1)
-        print("x:", self.x_fk, "y:", self.y_fk, "z:", self.z_fk)
+        #print("x:", self.x_fk, "y:", self.y_fk, "z:", self.z_fk)
         return q1, q2, q3
 
     def check(self):

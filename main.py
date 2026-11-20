@@ -23,15 +23,19 @@ while 1:
     frame, arm_pose,hand_pose = result
 
 # Draw DATA POINTS -> 
-
+    
     cam.draw_arm_skeleton(frame,arm_pose)
     cam.draw_hand_skeleton(frame,hand_pose)
     cv2.imshow("frame", frame)   
-    target = [1,1,1]
+    target = cam.target()
+#    print("target is ", target)
 # INVERSE KINEMATICS -> 
 
     q1,q2,q3 = kin.IK(target)
 
+# Hand Check
+
+    cam.hand_check()
 
 # SANITY CHECK(FORWARDS KINEMATICS)
 
